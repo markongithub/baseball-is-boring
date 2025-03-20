@@ -30,10 +30,15 @@ export function startTimeUTC(dateStr: string, timeStr: string, timeZone: string)
 }
 
 function totalOuts(lineScore: LineScore) {
-    var outs = 3 * (lineScore["currentInning"] - 1);
-    if (!lineScore["isTopInning"]) {
+    var outs = 6 * (lineScore.currentInning - 1);
+    if (!lineScore.isTopInning) {
         outs += 3;
     }
-    outs += lineScore["outs"];
+    outs += lineScore.outs;
     return outs;
+}
+
+export function totalOutsFromJSON(maybeLineScore: string) {
+    const lineScore: LineScore = JSON.parse(maybeLineScore) as LineScore;
+    return totalOuts(lineScore);
 }
