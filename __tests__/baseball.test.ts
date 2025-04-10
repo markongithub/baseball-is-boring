@@ -1,18 +1,14 @@
 import { readFileSync } from 'fs';
-import { startTimeUTC, totalOutsFromJSON } from '../app/lib/baseball';
+import { parseGame } from '../app/lib/baseball';
+import moment from 'moment';
 
-describe('startTimeUTC', () => {
+describe('parseGame', () => {
     test('whatever', () => {
-        const result = startTimeUTC("2025-03-13", "1:05 PM", "US/Arizona").toISOString();
-        expect(result).toBe("2025-03-13T20:05:00.000Z");
-    });
-
-});
-
-describe('totalOutsFromJSON', () => {
-    test('whatever', () => {
-        const testInput = readFileSync('test_data/linescore_778927.json', 'utf-8');
-        const result = totalOutsFromJSON(testInput);
-        expect(result).toBe(13);
+        const testInput = readFileSync('test_data/live_783691.json', 'utf-8');
+        const result = parseGame(testInput);
+        expect(result).toStrictEqual({
+            outs: 1,
+            startTime: moment("2025-04-11T19:02:00.000Z")
+        });
     });
 });

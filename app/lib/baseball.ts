@@ -1,17 +1,24 @@
-import moment from 'moment-timezone';
+import moment from 'moment';
 
-type BoxScore = {
-    info: [BoxScoreFact];
+interface LiveGame {
+    liveData: {
+        linescore: LineScore;
+    };
+    gameData: {
+        gameInfo: {
+            firstPitch: string;
+        };
+    };
 }
 
-type BoxScoreFact = {
-    label: string;
-    value: string;
-}
-
-type LineScore = {
+interface LineScore {
     currentInning: number;
     isTopInning: boolean;
+    outs: number;
+}
+
+type ParsedGame = {
+    startTime: moment.Moment;
     outs: number;
 }
 
@@ -24,43 +31,12 @@ type Prediction = {
     endTimeIfNinth: moment.Moment;
 }
 
-function startTimeStr(boxScore: BoxScore) {
-    for (const fact of boxScore["info"]) {
-        if (fact["label"] == "First pitch") {
-            return fact["value"];
-        }
+export function parseGame(maybeLiveGame: string): ParsedGame {
+    const liveGame: LiveGame = JSON.parse(maybeLiveGame) as LiveGame;
+    return {
+        outs: totalOuts(liveGame.liveData.linescore),
+        startTime: moment(liveGame.gameData.gameInfo.firstPitch),
     }
-    throw new Error("whatevz");
-};
-
-/*
-function venue(boxScore: BoxScore) {
-    for (const fact of boxScore["info"]) {
-        if (fact["label"] == "Venue") {
-            return fact["value"];
-        }
-    }
-    throw new Error("whatevz");
-};
-*/
-
-function timeZoneFromVenue(venue: string): string {
-    switch (venue) {
-        case "Surprise Stadium":
-            return "US/Arizona";
-        case "NBT Bank Stadium":
-            return "US/Eastern";
-        case "Target Field":
-            return "US/Central";
-        default:
-            throw new Error("the time zone from venue function is terrible");
-    }
-}
-
-export function startTimeUTC(dateStr: string, timeStr: string, timeZone: string): moment.Moment {
-    const localDateTime = `${dateStr} ${timeStr}`;
-
-    return moment.tz(localDateTime, "YYYY-MM-DD h:mm A", timeZone).utc();
 }
 
 function totalOuts(lineScore: LineScore) {
@@ -75,11 +51,6 @@ function totalOuts(lineScore: LineScore) {
 export function totalOutsFromJSON(maybeLineScore: string): number {
     const lineScore: LineScore = JSON.parse(maybeLineScore) as LineScore;
     return totalOuts(lineScore);
-}
-
-export function startTimeFromJSON(date: string, timeZone: string, maybeBoxScore: string) {
-    const boxScore: BoxScore = JSON.parse(maybeBoxScore) as BoxScore;
-    return startTimeUTC(date, startTimeStr(boxScore), timeZone);
 }
 
 async function fetchJsonRaw(url: string): Promise<string> {
@@ -102,36 +73,32 @@ async function fetchJsonRaw(url: string): Promise<string> {
     }
 }
 
-async function getLineScoreRaw(gameID: number): Promise<string> {
-    return fetchJsonRaw(`https://statsapi.mlb.com/api/v1/game/${gameID}/linescore`);
-}
-
-async function getBoxScoreRaw(gameID: number): Promise<string> {
-    return fetchJsonRaw(`http://statsapi.mlb.com/api/v1/game/${gameID}/boxscore`);
+async function getLiveGameRaw(gameID: number): Promise<string> {
+    return fetchJsonRaw(`https://statsapi.mlb.com/api/v1.1/game/${gameID}/feed/live`);
 }
 
 function predictGameLengths(startTime: moment.Moment, curTime: moment.Moment, outs: number): [number, number, number] {
     const timeSoFar: number = curTime.diff(startTime);
     const estimatedGameLengthLong = (timeSoFar / outs) * 54;
     if (outs >= 51) {
-        return [0, estimatedGameLengthLong];
+        return [timeSoFar, 0, estimatedGameLengthLong];
     }
     const estimatedGameLengthShort = (timeSoFar / outs) * 51;
     return [timeSoFar, estimatedGameLengthShort, estimatedGameLengthLong];
 }
 
-export function doItAllPure(date: string, timeZone: string, maybeBoxScore: string, maybeLineScore: string, curTime: moment.Moment): Prediction {
-    const startTime = startTimeFromJSON(date, timeZone, maybeBoxScore);
+export function doItAllPure(maybeLiveGame: string, curTime: moment.Moment): Prediction {
+    const liveGame = parseGame(maybeLiveGame);
     console.log("curTime: " + curTime);
-    const outs = totalOutsFromJSON(maybeLineScore);
-    console.log("startTime ", startTime, " curTime ", curTime, " outs ", outs);
-    const [timeSoFar, short, long] = predictGameLengths(startTime, curTime, outs);
+    const outs = liveGame.outs;
+    console.log("startTime ", liveGame.startTime, " curTime ", curTime, " outs ", outs);
+    const [timeSoFar, short, long] = predictGameLengths(liveGame.startTime, curTime, outs);
     console.log("short mins ", short / 60 / 1000, "long mins ", long / 60 / 1000);
     const timeLeftIfNoNinth = short - timeSoFar;
     const timeLeftIfNinth = long - timeSoFar;
     return {
         outs: outs,
-        timeSoFar: curTime.diff(startTime) / 60 / 1000,
+        timeSoFar: curTime.diff(liveGame.startTime) / 60 / 1000,
         timeLeftIfNoNinth: timeLeftIfNoNinth / 60 / 1000,
         endTimeIfNoNinth: curTime.clone().add(timeLeftIfNoNinth),
         timeLeftIfNinth: timeLeftIfNinth / 60 / 1000,
@@ -139,10 +106,8 @@ export function doItAllPure(date: string, timeZone: string, maybeBoxScore: strin
     }
 }
 
-export async function doItAllLive(date: string, venue: string, gameID: number): Promise<Prediction> {
-    const maybeLineScore = await getLineScoreRaw(gameID);
-    const maybeBoxScore = await getBoxScoreRaw(gameID);
-    const timeZone = timeZoneFromVenue(venue);
+export async function doItAllLive(gameID: number): Promise<Prediction> {
+    const maybeLiveGame = await getLiveGameRaw(gameID);
     const curTime = moment();
-    return doItAllPure(date, timeZone, maybeBoxScore, maybeLineScore, curTime);
+    return doItAllPure(maybeLiveGame, curTime);
 }
