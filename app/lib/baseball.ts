@@ -48,11 +48,6 @@ function totalOuts(lineScore: LineScore) {
     return outs;
 }
 
-export function totalOutsFromJSON(maybeLineScore: string): number {
-    const lineScore: LineScore = JSON.parse(maybeLineScore) as LineScore;
-    return totalOuts(lineScore);
-}
-
 async function fetchJsonRaw(url: string): Promise<string> {
     try {
         const response = await fetch(url);
