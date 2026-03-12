@@ -1,4 +1,4 @@
-import { doItAllLive } from "./lib/baseball";
+import { doItAllLive } from "../lib/baseball";
 
 export default async function Home(props: {
   searchParams: Promise<{
