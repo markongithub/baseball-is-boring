@@ -31,6 +31,46 @@ type Prediction = {
     endTimeIfNinth: moment.Moment;
 }
 
+// jq '.dates[].games[].teams.away.team.name'
+interface Schedule {
+    dates: ScheduleDate[];
+}
+
+interface ScheduleDate {
+    games: ScheduleGame[];
+}
+
+interface ScheduleGame {
+    gamePk: number;
+    gameDate: string;
+    teams: {
+        away: {
+            team: {
+                name: string;
+            }
+        }
+        home: {
+            team: {
+                name: string;
+            }
+        }
+    };
+    gameData: {
+        gameInfo: {
+            firstPitch: string;
+        };
+    };
+    status: {
+        detailedState: string;
+    }
+}
+
+export async function getSchedule(sportID: number, date: string): Promise<Schedule> {
+    const maybeSchedule = await getScheduleRaw(sportID, date);
+    const schedule: Schedule = JSON.parse(maybeSchedule) as Schedule;
+    return schedule
+}
+
 export function parseGame(maybeLiveGame: string): ParsedGame {
     const liveGame: LiveGame = JSON.parse(maybeLiveGame) as LiveGame;
     return {
@@ -70,6 +110,10 @@ async function fetchJsonRaw(url: string): Promise<string> {
 
 async function getLiveGameRaw(gameID: number): Promise<string> {
     return fetchJsonRaw(`https://statsapi.mlb.com/api/v1.1/game/${gameID}/feed/live`);
+}
+
+async function getScheduleRaw(sportID: number, date: string): Promise<string> {
+    return fetchJsonRaw(`https://statsapi.mlb.com/api/v1/schedule?sportId=${sportID}&startDate=${date}&endDate=${date}`);
 }
 
 function predictGameLengths(startTime: moment.Moment, curTime: moment.Moment, outs: number): [number, number, number] {
