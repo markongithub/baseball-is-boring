@@ -34,6 +34,8 @@ export default async function Home(props: {
     .tz(output.timeZoneID)
     .format("HH:mm");
 
+  const isBottomOfNinth = !output.isTopInning && output.currentInning === 9;
+
   return (
     <main>
       <p>
@@ -42,10 +44,16 @@ export default async function Home(props: {
       <p>
         {inningHalf} {output.currentInning}th, {outsLabel}
       </p>
-      <p>
-        At this pace, the game will end in {noNinthDuration} (at {noNinthEnd} {output.timeZoneName}) if the bottom of
-        the 9th is not played, and in {ninthDuration} (at {ninthEnd} {output.timeZoneName}) if it is.
-      </p>
+      {isBottomOfNinth ? (
+        <p>
+          At this pace, the game will end in {ninthDuration} (at {ninthEnd} {output.timeZoneName}).
+        </p>
+      ) : (
+        <p>
+          At this pace, the game will end in {noNinthDuration} (at {noNinthEnd} {output.timeZoneName}) if the bottom of
+          the 9th is not played, and in {ninthDuration} (at {ninthEnd} {output.timeZoneName}) if it is.
+        </p>
+      )}
     </main>
   );
 }
