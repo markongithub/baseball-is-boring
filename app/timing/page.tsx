@@ -1,5 +1,14 @@
 import { doItAllLive } from "../lib/baseball";
 
+function formatDuration(minutes: number): string {
+  const rounded = Math.round(minutes);
+  const hours = Math.floor(rounded / 60);
+  const mins = Math.abs(rounded % 60);
+  const hPart = `${hours}h`;
+  const mPart = `${mins.toString().padStart(2, "0")}m`;
+  return `${hPart}${mPart}`;
+}
+
 export default async function Home(props: {
   searchParams: Promise<{
     gameID: number;
@@ -10,8 +19,28 @@ export default async function Home(props: {
     throw new Error("you didn't specify a gameID");
   }
   const output = await doItAllLive(searchParams.gameID);
-  // Away team 5, Home team 4
-  // Top 5th, 1 out
-  // At this pace, the game will end in XXhYYm (at hh:mm) if the bottom of the 9th is not played, and in XXhYYm (at hh:mm) if it is.
-  return (JSON.stringify(output));
+
+  const inningHalf = output.isTopInning ? "Top" : "Bottom";
+  const outsLabel = `${output.outsThisInning} out${output.outsThisInning === 1 ? "" : "s"}`;
+
+  const noNinthDuration = formatDuration(output.timeLeftIfNoNinth);
+  const ninthDuration = formatDuration(output.timeLeftIfNinth);
+
+  const noNinthEnd = output.endTimeIfNoNinth.format("HH:mm");
+  const ninthEnd = output.endTimeIfNinth.format("HH:mm");
+
+  return (
+    <main>
+      <p>
+      {output.visitorName} {output.visitorScore}, {output.homeName} {output.homeScore}
+      </p>
+      <p>
+        {inningHalf} {output.currentInning}th, {outsLabel}
+      </p>
+      <p>
+        At this pace, the game will end in {noNinthDuration} (at {noNinthEnd}) if the bottom of
+        the 9th is not played, and in {ninthDuration} (at {ninthEnd}) if it is.
+      </p>
+    </main>
+  );
 }

@@ -3,14 +3,35 @@ import moment from 'moment';
 interface LiveGame {
     liveData: {
         linescore: LineScore;
+        plays: {
+            currentPlay: {
+                result: {
+                    homeScore: number;
+                    awayScore: number;
+                }
+            }
+        };
     };
     gameData: {
         gameInfo: {
             firstPitch: string;
         };
+        teams: {
+            home: {
+                name: string;
+            }
+            away: {
+                name: string;
+            }
+        }
     };
 }
+/*
+        homeName: liveGame.gameData.teams.home.name,
+        visitorName: liveGame.gameData.teams.away.name,
+        homeScore: liveGame.liveData.plays.currentPlay.result.homeScore,
 
+        */
 interface LineScore {
     currentInning: number;
     isTopInning: boolean;
@@ -156,7 +177,7 @@ export function doItAllPure(maybeLiveGame: string, curTime: moment.Moment): Pred
     return {
         currentInning: liveGame.currentInning,
         isTopInning: liveGame.isTopInning,
-        outsThisInning: outs,
+        outsThisInning: liveGame.outsThisInning,
         visitorName: liveGame.visitorName,
         homeName: liveGame.homeName,
         visitorScore: liveGame.visitorScore,
