@@ -1,3 +1,4 @@
+import moment from "moment-timezone";
 import { doItAllLive } from "../lib/baseball";
 
 function formatDuration(minutes: number): string {
@@ -26,13 +27,17 @@ export default async function Home(props: {
   const noNinthDuration = formatDuration(output.timeLeftIfNoNinth);
   const ninthDuration = formatDuration(output.timeLeftIfNinth);
 
-  const noNinthEnd = output.endTimeIfNoNinth.format("HH:mm");
-  const ninthEnd = output.endTimeIfNinth.format("HH:mm");
+  const noNinthEnd = moment(output.endTimeIfNoNinth)
+    .tz(output.timeZone)
+    .format("HH:mm");
+  const ninthEnd = moment(output.endTimeIfNinth)
+    .tz(output.timeZone)
+    .format("HH:mm");
 
   return (
     <main>
       <p>
-      {output.visitorName} {output.visitorScore}, {output.homeName} {output.homeScore}
+        {output.visitorName} {output.visitorScore}, {output.homeName} {output.homeScore}
       </p>
       <p>
         {inningHalf} {output.currentInning}th, {outsLabel}
