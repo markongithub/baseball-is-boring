@@ -19,11 +19,23 @@ interface LineScore {
 
 type ParsedGame = {
     startTime: moment.Moment;
-    outs: number;
+    currentInning: number;
+    isTopInning: boolean;
+    outsThisInning: number;
+    visitorName: string;
+    homeName: string;
+    visitorScore: number;
+    homeScore: number;
 }
 
 type Prediction = {
-    outs: number;
+    currentInning: number;
+    isTopInning: boolean;
+    outsThisInning: number;
+    visitorName: string;
+    homeName: string;
+    visitorScore: number;
+    homeScore: number;
     timeSoFar: number;
     timeLeftIfNoNinth: number;
     endTimeIfNoNinth: moment.Moment;
@@ -74,17 +86,23 @@ export async function getSchedule(sportID: number, date: string): Promise<Schedu
 export function parseGame(maybeLiveGame: string): ParsedGame {
     const liveGame: LiveGame = JSON.parse(maybeLiveGame) as LiveGame;
     return {
-        outs: totalOuts(liveGame.liveData.linescore),
         startTime: moment(liveGame.gameData.gameInfo.firstPitch),
+        currentInning: liveGame.liveData.linescore.currentInning,
+        isTopInning: liveGame.liveData.linescore.isTopInning,
+        outsThisInning: liveGame.liveData.linescore.outs,
+        homeName: liveGame.gameData.teams.home.name,
+        visitorName: liveGame.gameData.teams.away.name,
+        homeScore: liveGame.liveData.plays.currentPlay.result.homeScore,
+        visitorScore: liveGame.liveData.plays.currentPlay.result.awayScore,
     }
 }
 
-function totalOuts(lineScore: LineScore) {
-    let outs = 6 * (lineScore.currentInning - 1);
-    if (!lineScore.isTopInning) {
+function totalOuts(parsedGame: ParsedGame) {
+    let outs = 6 * (parsedGame.currentInning - 1);
+    if (!parsedGame.isTopInning) {
         outs += 3;
     }
-    outs += lineScore.outs;
+    outs += parsedGame.outsThisInning;
     return outs;
 }
 
@@ -129,14 +147,20 @@ function predictGameLengths(startTime: moment.Moment, curTime: moment.Moment, ou
 export function doItAllPure(maybeLiveGame: string, curTime: moment.Moment): Prediction {
     const liveGame = parseGame(maybeLiveGame);
     console.log("curTime: " + curTime);
-    const outs = liveGame.outs;
+    const outs = totalOuts(liveGame);
     console.log("startTime ", liveGame.startTime, " curTime ", curTime, " outs ", outs);
     const [timeSoFar, short, long] = predictGameLengths(liveGame.startTime, curTime, outs);
     console.log("short mins ", short / 60 / 1000, "long mins ", long / 60 / 1000);
     const timeLeftIfNoNinth = short - timeSoFar;
     const timeLeftIfNinth = long - timeSoFar;
     return {
-        outs: outs,
+        currentInning: liveGame.currentInning,
+        isTopInning: liveGame.isTopInning,
+        outsThisInning: outs,
+        visitorName: liveGame.visitorName,
+        homeName: liveGame.homeName,
+        visitorScore: liveGame.visitorScore,
+        homeScore: liveGame.homeScore,
         timeSoFar: curTime.diff(liveGame.startTime) / 60 / 1000,
         timeLeftIfNoNinth: timeLeftIfNoNinth / 60 / 1000,
         endTimeIfNoNinth: curTime.clone().add(timeLeftIfNoNinth),
