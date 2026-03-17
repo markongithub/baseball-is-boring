@@ -28,10 +28,10 @@ export default async function Home(props: {
   const ninthDuration = formatDuration(output.timeLeftIfNinth);
 
   const noNinthEnd = moment(output.endTimeIfNoNinth)
-    .tz(output.timeZone)
+    .tz(output.timeZoneID)
     .format("HH:mm");
   const ninthEnd = moment(output.endTimeIfNinth)
-    .tz(output.timeZone)
+    .tz(output.timeZoneID)
     .format("HH:mm");
 
   return (
@@ -43,8 +43,8 @@ export default async function Home(props: {
         {inningHalf} {output.currentInning}th, {outsLabel}
       </p>
       <p>
-        At this pace, the game will end in {noNinthDuration} (at {noNinthEnd}) if the bottom of
-        the 9th is not played, and in {ninthDuration} (at {ninthEnd}) if it is.
+        At this pace, the game will end in {noNinthDuration} (at {noNinthEnd} {output.timeZoneName}) if the bottom of
+        the 9th is not played, and in {ninthDuration} (at {ninthEnd} {output.timeZoneName}) if it is.
       </p>
     </main>
   );

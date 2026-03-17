@@ -27,6 +27,7 @@ interface LiveGame {
         venue: {
             timeZone: {
                 id: string;
+                tz: string;
             }
         }
     };
@@ -45,7 +46,8 @@ interface LineScore {
 
 type ParsedGame = {
     startTime: moment.Moment;
-    timeZone: string;
+    timeZoneID: string;
+    timeZoneName: string;
     currentInning: number;
     isTopInning: boolean;
     outsThisInning: number;
@@ -68,7 +70,8 @@ type Prediction = {
     endTimeIfNoNinth: moment.Moment;
     timeLeftIfNinth: number;
     endTimeIfNinth: moment.Moment;
-    timeZone: string;
+    timeZoneID: string;
+    timeZoneName: string;
 }
 
 // jq '.dates[].games[].teams.away.team.name'
@@ -122,7 +125,8 @@ export function parseGame(maybeLiveGame: string): ParsedGame {
         visitorName: liveGame.gameData.teams.away.name,
         homeScore: liveGame.liveData.plays.currentPlay.result.homeScore,
         visitorScore: liveGame.liveData.plays.currentPlay.result.awayScore,
-        timeZone: liveGame.gameData.venue.timeZone.id,
+        timeZoneID: liveGame.gameData.venue.timeZone.id,
+        timeZoneName: liveGame.gameData.venue.timeZone.tz,
     }
 }
 
@@ -195,7 +199,8 @@ export function doItAllPure(maybeLiveGame: string, curTime: moment.Moment): Pred
         endTimeIfNoNinth: curTime.clone().add(timeLeftIfNoNinth),
         timeLeftIfNinth: timeLeftIfNinth / 60 / 1000,
         endTimeIfNinth: curTime.clone().add(timeLeftIfNinth),
-        timeZone: liveGame.timeZone,
+        timeZoneID: liveGame.timeZoneID,
+        timeZoneName: liveGame.timeZoneName,
     }
 }
 
