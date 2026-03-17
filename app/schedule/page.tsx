@@ -23,7 +23,7 @@ export default async function Home(props: {
                 {flattenedGames.map((game) => (
                     <li key={game.gamePk}>
                         {(game.status.detailedState == "In Progress") ? (
-                            <Link href={`/timing?gameID=${game.gamePk}`}>{game.gameDate}: {game.teams.away.team.name} at {game.teams.home.team.name} ({game.status.detailedState})</Link>
+                            <Link href={`/timing?gameID=${game.gamePk}`}>{game.teams.away.team.name} at {game.teams.home.team.name} ({game.status.detailedState})</Link>
                         ) : (
                             <p>{game.gameDate}: {game.teams.away.team.name} at {game.teams.home.team.name} ({game.status.detailedState})</p>
                         )}
