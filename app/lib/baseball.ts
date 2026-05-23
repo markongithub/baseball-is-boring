@@ -1,6 +1,9 @@
 import moment from 'moment';
 
 interface LiveGame {
+    metaData: {
+        timeStamp: string;
+    }
     liveData: {
         linescore: LineScore;
         plays: {
@@ -46,6 +49,7 @@ interface LineScore {
 
 type ParsedGame = {
     startTime: moment.Moment;
+    dataTime: moment.Moment;
     timeZoneID: string;
     timeZoneName: string;
     currentInning: number;
@@ -72,6 +76,8 @@ type Prediction = {
     endTimeIfNinth: moment.Moment;
     timeZoneID: string;
     timeZoneName: string;
+    dataTime: moment.Moment;
+    retrievalTime: moment.Moment;
 }
 
 // jq '.dates[].games[].teams.away.team.name'
@@ -118,6 +124,7 @@ export function parseGame(maybeLiveGame: string): ParsedGame {
     const liveGame: LiveGame = JSON.parse(maybeLiveGame) as LiveGame;
     return {
         startTime: moment(liveGame.gameData.gameInfo.firstPitch),
+        dataTime: moment.utc(liveGame.metaData.timeStamp, 'YYYYMMDD_hhmmss'),
         currentInning: liveGame.liveData.linescore.currentInning,
         isTopInning: liveGame.liveData.linescore.isTopInning,
         outsThisInning: liveGame.liveData.linescore.outs,
@@ -181,8 +188,8 @@ export function doItAllPure(maybeLiveGame: string, curTime: moment.Moment): Pred
     const liveGame = parseGame(maybeLiveGame);
     console.log("curTime: " + curTime);
     const outs = totalOuts(liveGame);
-    console.log("startTime ", liveGame.startTime, " curTime ", curTime, " outs ", outs);
-    const [timeSoFar, short, long] = predictGameLengths(liveGame.startTime, curTime, outs);
+    console.log("startTime ", liveGame.startTime,  "dataTime ", liveGame.dataTime, " outs ", outs);
+    const [timeSoFar, short, long] = predictGameLengths(liveGame.startTime, liveGame.dataTime, outs);
     console.log("short mins ", short / 60 / 1000, "long mins ", long / 60 / 1000);
     const timeLeftIfNoNinth = short - timeSoFar;
     const timeLeftIfNinth = long - timeSoFar;
@@ -201,11 +208,13 @@ export function doItAllPure(maybeLiveGame: string, curTime: moment.Moment): Pred
         endTimeIfNinth: curTime.clone().add(timeLeftIfNinth),
         timeZoneID: liveGame.timeZoneID,
         timeZoneName: liveGame.timeZoneName,
+        dataTime: liveGame.dataTime,
+        retrievalTime: curTime
     }
 }
 
 export async function doItAllLive(gameID: number): Promise<Prediction> {
     const maybeLiveGame = await getLiveGameRaw(gameID);
-    const curTime = moment();
+    const curTime = moment.utc();
     return doItAllPure(maybeLiveGame, curTime);
 }

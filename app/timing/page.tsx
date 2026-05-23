@@ -53,7 +53,10 @@ export default async function Home(props: {
           At this pace, the game will end in {noNinthDuration} (at {noNinthEnd} {output.timeZoneName}) if the bottom of
           the 9th is not played, and in {ninthDuration} (at {ninthEnd} {output.timeZoneName}) if it is.
         </p>
+
       )}
+        <p>Retrieved from MLB at {output.retrievalTime.format("HH:mm:ss")}</p>
+        <p>Data was timestamped at {output.dataTime.format("HH:mm:ss")}</p>
     </main>
   );
 }
